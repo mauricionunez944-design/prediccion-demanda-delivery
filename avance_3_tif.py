@@ -358,3 +358,275 @@ files.download("README.md")
 from google.colab import files
 
 files.download("modelo.pkl")
+
+"""AVANCE 4"""
+
+#METRICAS COMPLETAS
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    classification_report,
+    roc_curve,
+    auc
+)
+
+import matplotlib.pyplot as plt
+
+# =========================
+# VARIABLE OBJETIVO
+# =========================
+
+df['AltaDemanda'] = (df['PedidosHechos'] >= 2).astype(int)
+
+X = df[['Mes', 'Día', 'HorarioXhora']]
+y = df['AltaDemanda']
+
+# =========================
+# TRAIN TEST SPLIT
+# =========================
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    stratify=y,
+    random_state=42
+)
+
+# =========================
+# MODELO
+# =========================
+
+modelo = RandomForestClassifier(random_state=42)
+
+modelo.fit(X_train, y_train)
+
+# =========================
+# PREDICCIONES
+# =========================
+
+y_pred = modelo.predict(X_test)
+
+# =========================
+# MÉTRICAS
+# =========================
+
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+print("Accuracy:", accuracy)
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1-score:", f1)
+
+print("\nClassification Report:\n")
+print(classification_report(y_test, y_pred))
+
+# MATRIZ DE CONFUSION
+
+cm = confusion_matrix(y_test, y_pred)
+
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+
+disp.plot()
+
+plt.title("Matriz de Confusión")
+
+plt.show()
+
+#CURVA ROC
+
+y_probs = modelo.predict_proba(X_test)[:,1]
+
+fpr, tpr, thresholds = roc_curve(y_test, y_probs)
+
+roc_auc = auc(fpr, tpr)
+
+plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.2f}")
+
+plt.plot([0,1], [0,1], linestyle='--')
+
+plt.xlabel("False Positive Rate")
+
+plt.ylabel("True Positive Rate")
+
+plt.title("Curva ROC")
+
+plt.legend()
+
+plt.show()
+
+"""EXPLICAVILIDAD DEL MODELO"""
+
+#IMPORTANCIA DE FEATURES
+
+import pandas as pd
+
+importancias = modelo.feature_importances_
+
+features = X.columns
+
+df_importancia = pd.DataFrame({
+    'Variable': features,
+    'Importancia': importancias
+})
+
+print(df_importancia)
+
+df_importancia.sort_values(
+    by='Importancia',
+    ascending=False
+).plot(
+    x='Variable',
+    y='Importancia',
+    kind='bar'
+)
+
+plt.title("Importancia de Variables")
+
+plt.ylabel("Importancia")
+
+plt.show()
+
+"""El modelo considera que el horario es la variable más importante para detectar alta demanda, lo cual coincide con los horarios pico de almuerzo y cena.
+
+¿Qué hace el sistema?
+
+Este sistema ayuda a repartidores de plataformas digitales a identificar los horarios con mayor demanda de pedidos utilizando datos históricos del último año.
+
+El usuario ingresa un día, mes y horario, y el sistema predice si existe una alta probabilidad de demanda elevada en ese momento.
+
+¿Qué tan confiable es?
+
+El modelo fue entrenado utilizando técnicas de Machine Learning supervisado y evaluado con métricas como accuracy, recall y F1-score.
+
+Los resultados muestran que el sistema logra identificar correctamente gran parte de los momentos de alta demanda utilizando patrones histórico
+
+¿Qué NO puede hacer?
+
+El sistema no puede predecir eventos inesperados como:
+
+tormentas,
+promociones especiales,
+feriados excepcionales,
+caídas de plataformas,
+cambios repentinos en el comportamiento de los usuarios.
+
+Las predicciones se basan únicamente en datos históricos.
+
+ANALISIS Y LIMITES DE RIESGOS
+
+Cambios inesperados en la demanda
+**texto en negrita**
+El modelo puede fallar ante eventos no presentes en el dataset histórico, como promociones especiales, condiciones climáticas extremas o eventos masivos.
+
+En esos casos, la demanda real puede ser muy distinta a la predicha.
+
+
+
+--------------------
+**Dataset limitado**
+
+El sistema fue entrenado con información de un único repartidor y un período específico.
+
+Por lo tanto, los patrones aprendidos pueden no representar el comportamiento general de todas las zonas o plataformas.
+
+
+**Horarios atípicos**
+
+El modelo puede equivocarse en horarios poco frecuentes o con pocos datos históricos, debido a la falta de ejemplos suficientes durante el entrenamiento.
+"""
+
+# Commented out IPython magic to ensure Python compatibility.
+# #Crear requirements.txt
+# 
+# %%writefile requirements.txt
+# 
+# streamlit
+# pandas
+# scikit-learn
+# joblib
+# openpyxl
+
+# Commented out IPython magic to ensure Python compatibility.
+# %%writefile app.py
+# 
+# import streamlit as st
+# import joblib
+# import pandas as pd
+# 
+# # =========================
+# # CARGAR MODELO
+# # =========================
+# 
+# modelo = joblib.load("modelo.pkl")
+# 
+# # =========================
+# # INTERFAZ
+# # =========================
+# 
+# st.title("Predicción de Alta Demanda para Repartidores")
+# 
+# st.write(
+#     "Esta aplicación ayuda a identificar "
+#     "horarios con alta demanda de pedidos."
+# )
+# 
+# # =========================
+# # INPUTS
+# # =========================
+# 
+# mes = st.number_input(
+#     "Mes",
+#     min_value=1,
+#     max_value=12
+# )
+# 
+# dia = st.number_input(
+#     "Día",
+#     min_value=1,
+#     max_value=31
+# )
+# 
+# hora = st.number_input(
+#     "Horario",
+#     min_value=0,
+#     max_value=23
+# )
+# 
+# # =========================
+# # PREDICCIÓN
+# # =========================
+# 
+# if st.button("Analizar Demanda"):
+# 
+#     datos = pd.DataFrame({
+#         'Mes': [mes],
+#         'Día': [dia],
+#         'HorarioXhora': [hora]
+#     })
+# 
+#     prediccion = modelo.predict(datos)
+# 
+#     if prediccion[0] == 1:
+# 
+#         st.error(
+#             "Alta Demanda: "
+#             "momento conveniente para trabajar."
+#         )
+# 
+#     else:
+# 
+#         st.success(
+#             "Demanda Normal."
+#         )
